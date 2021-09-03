@@ -1,0 +1,49 @@
+---
+
+- name: Create Azure Kubernetes Service
+  hosts: localhost
+  connection: local
+  vars:
+    resource_group: MyAKSResourceGroup
+    location: eastus
+    aks_name: myAKSCluster
+    acr_name: myAnsibleACRegistry
+    username: myAKSAdmin
+    ssh_key: ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC8ADtb428+2uwX8NzXIROYgB7bI8n0XqJwG/CqSHR8KWzHac654Rut3GYaC6m1rDAoyslmTvBSkGRHDer0GhqHi4klXDLSvRgp4EGBwyFDKFk3CjMWxLKYf1piX/iaWb5y2Cw7cvnse8bbwSN7eszHYRwQyUexF27bF7I6IuH1XRuB+SDEYJDhHqG/3DduRcPFDCaAzs6pc+9O/7/nrzYpjarHLqy+8bdvBnwvvQWwLW2DBlVciOFtI3BbWDaMsu7EXoARYcddlqn00NmscH8QKXBp8o76v9ZrrhzYWAXDN4VCKDuGbKATOuGV+/7WAEw6ixrZEBUM9Un87zHClfE5NztDC3dKQqoQih4qmPtbx0wFEbcIemy++IG6pfmKUbNpe7LU1HATYhr0TrX7ZThX9L1mghJpzc1zPHIlgplskNo4fnoZwfMibwgBFuUh6i7xGK4LmoxMCUDQT0audD+lYSuBfGWaJkbnS3Ht9p0eq43oahDIYGPNtt//uqGp+n0= root@kubectl
+    client_id: 8790493b-2fdd-4482-bb59-25002a15fb1b
+    client_secret: ALXm47Z005KG8SOMmkeCfbxq~KsNlgbniI
+    aks_version: 1.21.2
+  tasks:
+  - name: Create resource group
+    azure_rm_resourcegroup:
+      name: "{{ resource_group }}"
+      location: "{{ location }}"
+  - name: Create a managed Azure Container Services (AKS) cluster
+    azure_rm_aks:
+      name: "{{ aks_name }}"
+      location: "{{ location }}"
+      resource_group: "{{ resource_group }}"
+      dns_prefix: "{{ aks_name }}"
+      kubernetes_version: "{{aks_version}}"
+      linux_profile:
+        admin_username: "{{ username }}"
+        ssh_key: "{{ ssh_key }}"
+      service_principal:
+        client_id: "{{ client_id }}"
+        client_secret: "{{ client_secret }}"
+      agent_pool_profiles:
+        - name: default
+          count: 1
+          vm_size: Standard_D2_v2
+      tags:
+        Environment: Production
+  - name: Create an azure container registry
+    azure_rm_containerregistry:
+      name: "{{ acr_name }}"
+      location: "{{ location }}"
+      resource_group: "{{ resource_group }}"
+      admin_user_enabled: true
+      sku: Standard
+      tags:
+          Release: Beta1
+          Environment: Production
